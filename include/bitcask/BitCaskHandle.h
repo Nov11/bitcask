@@ -4,10 +4,11 @@
 
 #ifndef SRC_BITCASK_BITCASKHANDLE_H
 #define SRC_BITCASK_BITCASKHANDLE_H
-
+#include <string>
 namespace NS_bitcask {
 struct BitCaskHandle {
-
+  int number;
+  std::string file_name;
 };
 }
 

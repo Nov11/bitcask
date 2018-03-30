@@ -29,6 +29,9 @@ public:
   BitCaskError merge(const std::string &directoryName);
   BitCaskError sync(BitCaskHandle handle);
   BitCaskError close(BitCaskHandle handle);
+private:
+  std::string directory;
+
 };
 
 }
