@@ -16,6 +16,7 @@ int main() {
     getcwd(&buff[0], 100);
     DIR *dir = opendir("bctest");
     if (dir) {
+        chdir("bctest");
         dirent *entry = readdir(dir);
         while (entry) {
             cout << entry->d_name << endl;
@@ -24,6 +25,7 @@ int main() {
             }
             entry = readdir(dir);
         }
+        chdir("..");
     }
     closedir(dir);
 

@@ -26,7 +26,7 @@ namespace NS_bitcask {
     template<class Key, class Value>
     class BitCask {
     public:
-        BitCask() = default;
+        BitCask();
 
         ~BitCask();
 
@@ -55,6 +55,7 @@ namespace NS_bitcask {
         BitCaskError close(BitCaskHandle handle);
 
     private:
+        std::string originalDirectory;
         std::string directory;
         std::string lockFileName = "curLockFile";
         int lockFileFD = -1;

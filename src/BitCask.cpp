@@ -225,7 +225,16 @@ namespace NS_bitcask {
         if (this->fileFd != -1) {
             ::close(this->fileFd);
         }
-        chdir("..");
+        chdir(originalDirectory.data());
+    }
+
+    template<class Key, class Value>
+    BitCask<Key, Value>::BitCask() {
+        std::vector<char> buff(100);
+        getcwd(&buff[0], buff.size());
+        for (int i = 0; i < buff.size() && buff[i] != '\0'; i++) {
+            originalDirectory.push_back(buff[i]);
+        }
     }
 
     template
