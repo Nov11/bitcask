@@ -9,39 +9,54 @@
 #include <unistd.h>
 #include <unordered_map>
 #include <BitCaskHandle.h>
+#include <map>
 #include "BitCaskLogEntry.h"
 
 namespace NS_bitcask {
-    template<class Value>
     struct KeyDirEntry {
         std::string file_id;
         size_t value_sz = 0;
         off_t value_pos = 0;
         time_t tstamp = 0;
 
-        template<class Key>
-        static KeyDirEntry convert(BitCaskLogEntry<Key, Value> &entry, std::string fileName, off_t value_position);
+        template<class Key, class Value>
+        static KeyDirEntry convert(BitCaskLogEntry<Key, Value> &entry) {
+            KeyDirEntry result;
+            result.file_id = entry.fileName;
+            result.value_sz = entry.value_sz;
+            result.tstamp = entry.tstamp;
+            result.value_pos = entry.value_offset;
+            return result;
+        }
     };
-
-    template<class Value>
-    template<class Key>
-    KeyDirEntry<Value> KeyDirEntry<Value>::convert(BitCaskLogEntry<Key, Value> &entry,
-                                                   std::string fileName,
-                                                   off_t value_position) {
-        KeyDirEntry result;
-        result.file_id = fileName;
-        result.value_sz = entry.value_sz;
-        result.tstamp = entry.tstamp;
-        result.value_pos = value_position;
-        return result;
-    }
 
     template<class Key, class Value>
     class BitCaskKeyDir {
     public:
-        std::unordered_map<Key, KeyDirEntry<Value>> hash;
+        std::unordered_map<Key, KeyDirEntry> table;
 
-        void rebuild(int openedFD, std::string fileName);
+        void rebuild(int openedFD, std::string fileName) {
+            auto entry = BitCaskLogEntry<Key, Value>::readFromFile(openedFD, fileName);
+            while (entry != BitCaskLogEntry<Key, Value>::invalid()) {
+                table[entry.key] = KeyDirEntry::convert(entry);
+                entry = BitCaskLogEntry<Key, Value>::readFromFile(openedFD, fileName);
+            }
+        }
+
+        void insert(BitCaskLogEntry<Key, Value> &entry) {
+            auto ret = KeyDirEntry::convert(entry);
+            auto &ref = table[entry.key];
+            ref = ret;
+        }
+
+        bool get(const Key &key, KeyDirEntry &keyDirEntry) {
+            auto iter = table.find(key);
+            if (iter != table.end()) {
+                keyDirEntry = iter->second;
+                return true;
+            }
+            return false;
+        }
     };
 
 }

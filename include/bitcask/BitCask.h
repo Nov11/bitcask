@@ -10,7 +10,7 @@
 #include <vector>
 #include <BitCaskHandle.h>
 #include <BitCaskError.h>
-#include "BitCaskKeyDir.h"
+#include <BitCaskKeyDir.h>
 
 namespace NS_bitcask {
 
@@ -56,11 +56,15 @@ namespace NS_bitcask {
 
     private:
         std::string directory;
-        int dirFd = -1;
+        std::string lockFileName = "curLockFile";
+        int lockFileFD = -1;
         int fileFd = -1;
-        BitCaskKeyDir<Key, Value> hash;
+        std::string currentFileName;
+        BitCaskKeyDir<Key, Value> bitCaskKeyDir;
 
         void rebuildKeyDirectory();
+
+        bool checkHandle(const BitCaskHandle &handle) { return handle.directory == directory; }
     };
 
 }

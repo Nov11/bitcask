@@ -10,76 +10,46 @@
 #include <cstring>
 #include <CRC32.h>
 #include <assert.h>
+#include <Utility.h>
 
 namespace NS_bitcask {
 
-    template<class Key>
-    class DESERIAL {
-    public:
-        static Key deserial(char *buff, size_t);
-    };
-
-    template<>
-    class DESERIAL<int> {
-    public:
-        static int deserial(char *buff, size_t len) {
-            return *reinterpret_cast<int *>(buff);
+    static off_t currentPosition(int fd) {
+        auto curOffset = lseek(fd, 0, SEEK_CUR);
+        if (curOffset == -1) {
+            perror("get current position in file failed");
+            return -1;
         }
-    };
+        return curOffset;
+    }
 
-    template<>
-    class DESERIAL<std::string> {
-    public:
-        static std::string deserial(char *buff, size_t len) {
-            return std::string(buff, len);
-        }
-    };
-
-    template<class Key>
-    class SERIAL {
-    public:
-        static std::vector<char> serial(const Key &k);
-    };
-
-    template<>
-    class SERIAL<int> {
-    public:
-        static std::vector<char> serial(const int &i) {
-            std::vector<char> result(sizeof(int));
-            *(reinterpret_cast<int *>(&result[0])) = i;
-            return result;
-        }
-    };
-
-    template<>
-    class SERIAL<std::string> {
-    public:
-        static std::vector<char> serial(const std::string &s) {
-            return std::vector<char>(s.begin(), s.end());
-        }
-    };
+    static off_t
+    get_value_offset(off_t offsetOfEntryHead, size_t crcandtstamp, size_t ks_field, size_t vs_field, size_t ksz) {
+        return offsetOfEntryHead +
+               crcandtstamp +
+               ks_field +
+               vs_field +
+               ksz;
+    }
 
     template<class Key, class Value>
-    BitCaskLogEntry<Key, Value> BitCaskLogEntry<Key, Value>::readFromFile(int fd,
-                                                                          off_t *offsetofentry,
-                                                                          off_t *offsetOfValue) {
+    BitCaskLogEntry<Key, Value> BitCaskLogEntry<Key, Value>::readFromFile(int fd, const std::string &name) {
         auto curOffset = lseek(fd, 0, SEEK_CUR);
         if (curOffset == -1) {
             perror("get offset of current entry");
             return BitCaskLogEntry::invalid();
         }
 
-        if (offsetofentry != nullptr) {
-            *offsetofentry = curOffset;
-        }
-
         size_t skip = CRC32ANDTIMESTAMPLENGTH + sizeof(BitCaskLogEntry::ksz)
                       + sizeof(BitCaskLogEntry::value_sz);
         std::vector<char> preamble(skip);
         ssize_t readRet = ::read(fd, preamble.data(), preamble.size());
+        if (readRet == 0) {
+            return BitCaskLogEntry::invalid();
+        }
         if (readRet != preamble.size()) {
             perror("crc & tstamp & ksz & vsz corrupted");
-            exit(1);
+            return BitCaskLogEntry::invalid();
         }
 
         size_t ksz = *reinterpret_cast<size_t *>(&preamble[CRC32ANDTIMESTAMPLENGTH]);
@@ -87,7 +57,7 @@ namespace NS_bitcask {
 
         preamble.resize(skip + ksz + vsz);
         readRet = ::read(fd, &preamble[skip], ksz + vsz);
-        if (readRet != preamble.size()) {
+        if (readRet != ksz + vsz) {
             perror("read kv content failed");
             exit(1);
         }
@@ -108,18 +78,20 @@ namespace NS_bitcask {
         ret.key = DESERIAL<Key>::deserial(&preamble[skip], ksz);
         ret.value = DESERIAL<Value>::deserial(&preamble[skip + ksz], vsz);
 
-        if (offsetOfValue != nullptr) {
-            *offsetofentry = curOffset +
-                             CRC32ANDTIMESTAMPLENGTH +
-                             sizeof(ret.ksz) +
-                             sizeof(ret.value_sz) +
-                             ret.ksz;
-        }
+        ret.value_offset = get_value_offset(curOffset, CRC32ANDTIMESTAMPLENGTH, sizeof(ret.ksz), sizeof(ret.value_sz),
+                                            ksz);
+        ret.fileName = name;
         return ret;
     }
 
+
     template<class Key, class Value>
-    void BitCaskLogEntry<Key, Value>::writeToFileAndUpdateFields(int fd) {
+    void BitCaskLogEntry<Key, Value>::writeToFileAndUpdateFields(int fd, const std::string &fileName) {
+        auto curPos = currentPosition(fd);
+        if (curPos == -1) {
+            return;
+        }
+
         size_t sz = CRC32ANDTIMESTAMPLENGTH;
         sz += sizeof(this->ksz);
         sz += sizeof(this->value_sz);
@@ -133,11 +105,12 @@ namespace NS_bitcask {
         //get serialize byte array
         //time stamp
         auto tstamp = time(nullptr);
-        *(reinterpret_cast<time_t *>(&buff + sizeof(uint32_t))) = tstamp;
-        //key size
-        *(reinterpret_cast<size_t *>(&buff + CRC32ANDTIMESTAMPLENGTH)) = kserial.size();
+        *(reinterpret_cast<time_t *>(&buff[0] + sizeof(uint32_t))) = tstamp;
+        //keyreadBytes size
+        *(reinterpret_cast<size_t *>(&buff[0] + CRC32ANDTIMESTAMPLENGTH)) = kserial.size();
         //value size
-        *(reinterpret_cast<size_t *>(&buff + CRC32ANDTIMESTAMPLENGTH + sizeof(BitCaskLogEntry::ksz))) = vserial.size();
+        *(reinterpret_cast<size_t *>(&buff[0] + CRC32ANDTIMESTAMPLENGTH +
+                                     sizeof(BitCaskLogEntry::ksz))) = vserial.size();
         size_t offset = CRC32ANDTIMESTAMPLENGTH + sizeof(this->ksz) + sizeof(this->value_sz);
         //key
         for (size_t i = 0; i < kserial.size(); i++) {
@@ -168,6 +141,8 @@ namespace NS_bitcask {
         this->ksz = kserial.size();
         this->value_sz = vserial.size();
 
+        this->value_offset = get_value_offset(curPos, CRC32ANDTIMESTAMPLENGTH, sizeof(ksz), sizeof(value_sz), ksz);
+        this->fileName = fileName;
         return;
     }
 

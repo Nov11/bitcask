@@ -8,12 +8,18 @@
 #include <string>
 
 namespace NS_bitcask {
+    enum {
+        OK = 0,
+        INVALID_HANDLE,
+        NO_SUCH_ELEMENT_IN_KEY_DIR
+    };
+
     struct BitCaskError {
         int errorCode = -1;
         std::string errorMessage;
 
         static BitCaskError &OK() {
-            static BitCaskError OK(-1, "");
+            static BitCaskError OK(0, "OK");
             return OK;
         }
 

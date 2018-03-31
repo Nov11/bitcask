@@ -11,6 +11,7 @@
 namespace NS_bitcask {
     struct BitCaskHandle {
         int number = -1;
+        std::string directory;
         std::string file_name;
 
         static const BitCaskHandle &invalid() {
@@ -18,9 +19,14 @@ namespace NS_bitcask {
             return invalid;
         }
 
+        bool OK() const {
+            return number != -1;
+        }
+
         BitCaskHandle() = default;
 
-        BitCaskHandle(int n, std::string fileName) : number(n), file_name(std::move(fileName)) {}
+        BitCaskHandle(int n, std::string fileName, std::string dir) : number(n), file_name(std::move(fileName)),
+                                                                      directory(dir) {}
     };
 
 }

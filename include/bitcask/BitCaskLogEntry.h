@@ -21,6 +21,9 @@ namespace NS_bitcask {
         Key key;
         Value value;
 
+        off_t value_offset = 0;
+        std::string fileName;
+
         static const BitCaskLogEntry &invalid() {
             static BitCaskLogEntry invalidEntry;
             return invalidEntry;
@@ -28,11 +31,11 @@ namespace NS_bitcask {
 
         static size_t CRC32ANDTIMESTAMPLENGTH;
 
-        static BitCaskLogEntry readFromFile(int fd, off_t *off_begin, off_t *value_position);
+        static BitCaskLogEntry readFromFile(int fd, const std::string &name);
 
-        static BitCaskLogEntry readFromFile(int fd) { return readFromFile(fd, nullptr, nullptr); }
+//        static BitCaskLogEntry readFromFile(int fd) { return readFromFile(fd, nullptr); }
 
-        void writeToFileAndUpdateFields(int fd);
+        void writeToFileAndUpdateFields(int fd, const std::string &fileName);
 //  size_t value_offset_in_entry() const {
 //    return CRC32ANDTIMESTAMPLENGTH + sizeof(ksz) + sizeof(value_sz) +
 //  }

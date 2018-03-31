@@ -6,16 +6,33 @@
 #include <BitCaskKeyDir.h>
 
 namespace NS_bitcask {
-    template<class Key, class Value>
-    void BitCaskKeyDir<Key, Value>::rebuild(int openedFD, std::string name) {
-        off_t off_begin = 0;
-        off_t value_position = 0;
-        auto entry = BitCaskLogEntry<Key, Value>::readFromFile(openedFD, &off_begin, &value_position);
-        while (entry != BitCaskLogEntry<Key, Value>::invalid()) {
-            hash[entry.key] = KeyDirEntry<Value>::convert(entry, name, value_position);
-        }
-    }
 
-    template
-    class BitCaskKeyDir<int, std::string>;
+
+//    template<class Key, class Value>
+//    void BitCaskKeyDir<Key, Value>::rebuild(int openedFD, std::string name) {
+//        auto entry = BitCaskLogEntry<Key, Value>::readFromFile(openedFD, name);
+//        while (entry != BitCaskLogEntry<Key, Value>::invalid()) {
+//            table[entry.key] = KeyDirEntry::convert(entry);
+//        }
+//    }
+//
+//    template<class Key, class Value>
+//    void BitCaskKeyDir<Key, Value>::insert(BitCaskLogEntry<Key, Value> &entry) {
+//        auto ret = KeyDirEntry::convert(entry);
+//        auto &ref = table[entry.key];
+//        ref = ret;
+//    }
+//
+//    template<class Key, class Value>
+//    bool BitCaskKeyDir<Key, Value>::get(const Key &key, KeyDirEntry &keyDirEntry) {
+//        auto iter = table.find(key);
+//        if (iter != table.end()) {
+//            keyDirEntry = iter->second;
+//            return true;
+//        }
+//        return false;
+//    }
+
+//    template
+//    class BitCaskKeyDir<int, std::string>;
 }
