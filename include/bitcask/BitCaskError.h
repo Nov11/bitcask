@@ -24,6 +24,13 @@ namespace NS_bitcask {
         }
 
         BitCaskError(int errorCode, const std::string &msg) : errorCode(errorCode), errorMessage(msg) {}
+
+        bool operator==(const BitCaskError &other) const {
+            if (this == &other) {
+                return true;
+            }
+            return errorCode == other.errorCode && errorMessage == other.errorMessage;
+        }
     };
 
 }

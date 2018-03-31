@@ -225,6 +225,7 @@ namespace NS_bitcask {
         if (this->fileFd != -1) {
             ::close(this->fileFd);
         }
+        chdir("..");
     }
 
     template
