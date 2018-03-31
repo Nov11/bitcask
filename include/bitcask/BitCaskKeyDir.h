@@ -8,9 +8,9 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <unordered_map>
+#include <vector>
 #include <BitCaskHandle.h>
-#include <map>
-#include "BitCaskLogEntry.h"
+#include <BitCaskLogEntry.h>
 
 namespace NS_bitcask {
     struct KeyDirEntry {
@@ -66,6 +66,14 @@ namespace NS_bitcask {
 
         void del(const Key &key) {
             table.erase(key);
+        }
+
+        std::vector<Key> keyList() const {
+            std::vector<Key> result;
+            for (const auto &item : table) {
+                result.emplace_back(item.first);
+            }
+            return result;
         }
     };
 

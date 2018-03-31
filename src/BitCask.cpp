@@ -16,6 +16,7 @@
 #include <BitCaskHandle.h>
 #include <cstring>
 #include <Utility.h>
+#include <assert.h>
 
 namespace NS_bitcask {
     struct DIR_WRAPPER {
@@ -99,6 +100,7 @@ namespace NS_bitcask {
         }
         this->fileFd = fileFD;
         this->currentFileName = result.file_name;
+        this->opened = true;
         return result;
     }
 
@@ -244,6 +246,14 @@ namespace NS_bitcask {
         for (int i = 0; i < buff.size() && buff[i] != '\0'; i++) {
             originalDirectory.push_back(buff[i]);
         }
+    }
+
+    template<class Key, class Value>
+    BitCaskError BitCask<Key, Value>::list_keys(BitCaskHandle handle, std::vector<Key> *result) {
+        assert(this->opened == true);
+        auto ret = bitCaskKeyDir.keyList();
+        std::copy(ret.begin(), ret.end(), back_inserter(*result));
+        return BitCaskError::OK();
     }
 
     template

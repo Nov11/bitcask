@@ -44,7 +44,7 @@ namespace NS_bitcask {
 
         BitCaskError del(BitCaskHandle handle, const Key &);
 
-        BitCaskError list_keys(BitCaskHandle handle, std::vector<int> *result);
+        BitCaskError list_keys(BitCaskHandle handle, std::vector<Key> *result);
 
 //  template<class Func>
 //  int fold(BitCaskHandle handle, Func &&func, int acc0);//what is this used for?
@@ -55,6 +55,7 @@ namespace NS_bitcask {
         BitCaskError close(BitCaskHandle handle);
 
     private:
+        bool opened = false;
         std::string originalDirectory;
         std::string directory;
         std::string lockFileName = "curLockFile";

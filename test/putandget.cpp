@@ -7,6 +7,7 @@
 #include <iostream>
 #include <assert.h>
 #include <dirent.h>
+#include <map>
 
 using namespace std;
 using namespace NS_bitcask;
@@ -74,7 +75,18 @@ int main() {
             assert(item.second == tmp);
         }
 
+
+        //this is for listkeys
+        std::vector<int> keys;
+        bitCask.list_keys(handle, &keys);
+        assert(keys.size() == values.size());
+        for (auto item : keys) {
+            if (values.find(item) == values.end()) {
+                assert(false);
+            }
+        }
     }
+
 
     return 0;
 }
