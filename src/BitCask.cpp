@@ -158,7 +158,16 @@ namespace NS_bitcask {
     }
 
     template<class Key, class Value>
-    BitCaskError BitCask<Key, Value>::del(BitCaskHandle handle, const Key &) {
+    BitCaskError BitCask<Key, Value>::del(BitCaskHandle handle, const Key &key) {
+        //remove key from key entry directory and mark that in file
+        //if a key is removed, its value sz will be empty
+        //first mark it in file
+        BitCaskLogEntry<Key, Value> entry;
+        entry.key = key;
+        entry.value_sz = 0;
+        entry.writeToFileAndUpdateFields(fileFd, handle.file_name);
+        //second remove it from directory
+        bitCaskKeyDir.del(key);
         return BitCaskError::OK();
     }
 

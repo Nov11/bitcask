@@ -54,19 +54,26 @@ int main() {
             assert(item.second == tmp);
         }
 
+        //this is for delete
+        bitCask.del(handle, 5);
+        values.erase(5);
+        //
+
         bitCask.close(handle);
     }
+    {
+        BitCask<int, string> bitCask;
+        auto handle = bitCask.open("bctest");
+        if (!handle.OK()) {
+            return -1;
+        }
 
-    BitCask<int, string> bitCask;
-    auto handle = bitCask.open("bctest");
-    if (!handle.OK()) {
-        return -1;
-    }
+        for (auto item : values) {
+            string tmp;
+            assert(bitCask.get(handle, item.first, tmp) == BitCaskError::OK());
+            assert(item.second == tmp);
+        }
 
-    for (auto item : values) {
-        string tmp;
-        assert(bitCask.get(handle, item.first, tmp) == BitCaskError::OK());
-        assert(item.second == tmp);
     }
 
     return 0;

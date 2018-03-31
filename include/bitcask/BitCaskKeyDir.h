@@ -32,13 +32,19 @@ namespace NS_bitcask {
 
     template<class Key, class Value>
     class BitCaskKeyDir {
-    public:
         std::unordered_map<Key, KeyDirEntry> table;
+    public:
 
         void rebuild(int openedFD, std::string fileName) {
             auto entry = BitCaskLogEntry<Key, Value>::readFromFile(openedFD, fileName);
             while (entry != BitCaskLogEntry<Key, Value>::invalid()) {
-                table[entry.key] = KeyDirEntry::convert(entry);
+                //ignore log entry with value sz == 0
+                //if so, the key is deleted
+                if (entry.value_sz == 0) {
+                    table.erase(entry.key);
+                } else {
+                    table[entry.key] = KeyDirEntry::convert(entry);
+                }
                 entry = BitCaskLogEntry<Key, Value>::readFromFile(openedFD, fileName);
             }
         }
@@ -56,6 +62,10 @@ namespace NS_bitcask {
                 return true;
             }
             return false;
+        }
+
+        void del(const Key &key) {
+            table.erase(key);
         }
     };
 
