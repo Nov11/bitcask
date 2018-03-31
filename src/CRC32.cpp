@@ -761,11 +761,11 @@ crc32(const void *buf, size_t size) {
     return crc ^ ~0U;
 }
 
-size_t CRC32::getCRC32(const std::string &s) {
+uint32_t CRC32::getCRC32(const std::string &s) {
     return crc32(s.data(), s.size());
 
 }
 
-size_t CRC32::getCRC32(char *buff, size_t len) {
+uint32_t CRC32::getCRC32(char *buff, size_t len) {
     return crc32(buff, len);
 }

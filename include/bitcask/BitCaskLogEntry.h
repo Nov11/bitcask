@@ -26,15 +26,15 @@ namespace NS_bitcask {
             return invalidEntry;
         }
 
-        static size_t HEADERLENGTH;
+        static size_t CRC32ANDTIMESTAMPLENGTH;
 
         static BitCaskLogEntry readFromFile(int fd, off_t *off_begin, off_t *value_position);
 
         static BitCaskLogEntry readFromFile(int fd) { return readFromFile(fd, nullptr, nullptr); }
 
-        void writeToFile(int fd);
+        void writeToFileAndUpdateFields(int fd);
 //  size_t value_offset_in_entry() const {
-//    return HEADERLENGTH + sizeof(ksz) + sizeof(value_sz) +
+//    return CRC32ANDTIMESTAMPLENGTH + sizeof(ksz) + sizeof(value_sz) +
 //  }
 
         bool operator==(const BitCaskLogEntry &other) const {

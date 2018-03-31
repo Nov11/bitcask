@@ -39,9 +39,17 @@ namespace NS_bitcask {
 
         //TODO:read the key directory for this directory and merge it into global tree
 
+        rebuildKeyDirectory();
+
         //open a file to write kv pairs
         time_t currentTime = time(nullptr);
         BitCaskHandle result(0, std::to_string(currentTime));
+
+        int fileFD = ::open(result.file_name.data(), O_CLOEXEC | O_RDWR, 0x0700);
+        if (fileFD != -1) {
+            perror("open log file");
+        }
+        this->fileFd = fileFD;
         return result;
     }
 
@@ -57,6 +65,7 @@ namespace NS_bitcask {
 
     template<class Key, class Value>
     BitCaskError BitCask<Key, Value>::put(BitCaskHandle handle, const Key &, const Value &) {
+        BitCaskLogEntry entry()
         return BitCaskError::OK();
     }
 

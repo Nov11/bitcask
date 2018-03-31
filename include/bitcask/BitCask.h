@@ -57,6 +57,7 @@ namespace NS_bitcask {
     private:
         std::string directory;
         int dirFd = -1;
+        int fileFd = -1;
         BitCaskKeyDir<Key, Value> hash;
 
         void rebuildKeyDirectory();
