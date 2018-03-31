@@ -7,8 +7,11 @@
 
 #include <cstddef>
 #include <string>
+
 struct CRC32 {
-static size_t getCRC32(const std::string& s);
+    static size_t getCRC32(const std::string &s);
+
+    static size_t getCRC32(char *buff, size_t len);
 };
 
 #endif //SRC_BITCASK_CRC32_H

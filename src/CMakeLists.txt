@@ -1,6 +1,8 @@
 set(SOURCE
         BitCask.cpp
         BitCaskHandle.cpp
+        BitCaskKeyDir.cpp
+        BitCaskLogEntry.cpp
         CRC32.cpp
         ../include/bitcask/BitCask.h
         ../include/bitcask/BitCaskError.h
