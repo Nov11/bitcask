@@ -17,6 +17,7 @@
 #include <cstring>
 #include <Utility.h>
 #include <assert.h>
+#include <set>
 
 namespace NS_bitcask {
     struct DIR_WRAPPER {
@@ -173,13 +174,45 @@ namespace NS_bitcask {
         return BitCaskError::OK();
     }
 
+    /**
+     * Merge several data files within a Bitcask datastore into a more
+     * compact form. Also, produce hintfiles for faster startup.
+     * @tparam Key
+     * @tparam Value
+     * @param directoryName
+     * @return
+     */
     template<class Key, class Value>
     BitCaskError BitCask<Key, Value>::merge(const std::string &directoryName) {
+        assert(directoryName == this->directory);
+        //transverse files in this folder
+        DIR_WRAPPER dir = opendir(".");
+        if (dir == nullptr) {
+            perror("open dir for merge");
+            return BitCaskError(CANNOT_OPEN_DIR, "cannot open current dir");
+        }
+
+        dirent *dirEntry = readdir(dir);
+        while (dirEntry) {
+            if (strcmp(".", dirEntry->d_name) == 0
+                || strcmp("..", dirEntry->d_name) == 0
+                //                || strcmp(currentFileName.data(), dirEntry->d_name) == 0
+                || strcmp(lockFileName.data(), dirEntry->d_name) == 0) {
+                //nothing
+            } else {
+                doMerge(dirEntry->d_name);
+            }
+
+
+            dirEntry = readdir(dir);
+        }
+
         return BitCaskError::OK();
     }
 
     template<class Key, class Value>
     BitCaskError BitCask<Key, Value>::sync(BitCaskHandle handle) {
+        //as using O_SYNC flag on opened files, this is not needed
         return BitCaskError::OK();
     }
 
@@ -198,18 +231,32 @@ namespace NS_bitcask {
         }
 
         //get a list of all files
-        std::vector<std::string> fileNameLists;
+        std::set<std::string> fileNameLists;
         dirent *entry = nullptr;
         while ((entry = readdir(dir)) != nullptr) {
-            //todo: deal with hint file
             if (strcmp(entry->d_name, ".") == 0
                 || strcmp(entry->d_name, "..") == 0
                 || strcmp(entry->d_name, lockFileName.data()) == 0) {
                 continue;
             }
-            fileNameLists.emplace_back(entry->d_name);
+
+            std::string n(entry->d_name);
+            if (n.size() > 4) {
+                std::string postfix = n.substr(n.size() - 4);
+                if (postfix == "hint") {
+                    fileNameLists.insert(entry->d_name);
+                    std::string prefix = n.substr(0, n.size() - 4);
+                    fileNameLists.erase(prefix);
+                } else {
+                    std::string hintFile = n + "hint";
+                    if (fileNameLists.find(hintFile) == fileNameLists.end()) {
+                        fileNameLists.insert(entry->d_name);
+                    }
+                }
+            } else {
+                assert(false);
+            }
         }
-        sort(fileNameLists.begin(), fileNameLists.end());
         //read files from the oldest to newest
 
         for (const auto &name : fileNameLists) {
@@ -254,6 +301,70 @@ namespace NS_bitcask {
         auto ret = bitCaskKeyDir.keyList();
         std::copy(ret.begin(), ret.end(), back_inserter(*result));
         return BitCaskError::OK();
+    }
+
+    void appendToFile(int fd, const char *buff, size_t sz) {
+        ssize_t retWrite = ::write(fd, buff, sz);
+        if (retWrite != sz) {
+            perror("write bytes less than expected");
+        }
+    }
+
+    /**
+     * look through every log entry
+     * if the entry is still in keyDirectory, keep the file and write it to a hint file, create a new one if there's none
+     * else ignore it
+     *
+     * if the whole file is read and no hint file is generated, remove the file.
+     * if there is already a hint file, remove it as well.
+     *
+     *
+     *
+     * @tparam Key
+     * @tparam Value
+     * @param name
+     */
+    template<class Key, class Value>
+    void BitCask<Key, Value>::doMerge(const std::string &name) {
+        FD_WRAPPER hintFD = ::open((name + "hint.tmp").data(), O_WRONLY | O_CREAT, S_IRWXU);
+        if (hintFD == -1) {
+            perror("open hint tmp file failed");
+            return;
+        }
+
+        FD_WRAPPER fileFD = ::open(name.data(), O_RDONLY);
+        if (fileFD == -1) {
+            perror("open original file failed");
+        }
+
+        bool notEmpty = false;
+        auto logEntry = BitCaskLogEntry<Key, Value>::readFromFile(fileFD, name);
+        while (logEntry != BitCaskLogEntry<Key, Value>::invalid()) {
+            //is this log in key directory?
+            KeyDirEntry keyDirEntry;
+            auto ret = bitCaskKeyDir.get(logEntry.key, keyDirEntry);
+            if (ret) {
+                if (keyDirEntry.value_pos == logEntry.value_offset) {
+                    //log this log entry to hint file
+                    logEntry.writeToFile(hintFD);
+                    notEmpty = true;
+                }
+            }
+            logEntry = BitCaskLogEntry<Key, Value>::readFromFile(fileFD, name);
+        }
+
+        if (!notEmpty) {
+            //remove this & its possible hint file & tmp hint file
+            unlink(name.data());
+            unlink((name + "hint").data());
+            unlink((name + "hint.tmp").data());
+        } else {
+            unlink((name + "hint").data());
+            int ret = rename((name + "hint.tmp").data(), (name + "hint").data());
+            if (ret == -1) {
+                perror("rename hint tmp file to hint file failed");
+            }
+        }
     }
 
     template

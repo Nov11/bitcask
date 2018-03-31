@@ -36,6 +36,8 @@ namespace NS_bitcask {
 //        static BitCaskLogEntry readFromFile(int fd) { return readFromFile(fd, nullptr); }
 
         void writeToFileAndUpdateFields(int fd, const std::string &fileName);
+
+        void writeToFile(int fd);
 //  size_t value_offset_in_entry() const {
 //    return CRC32ANDTIMESTAMPLENGTH + sizeof(ksz) + sizeof(value_sz) +
 //  }

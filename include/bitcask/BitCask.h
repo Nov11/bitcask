@@ -66,6 +66,7 @@ namespace NS_bitcask {
 
         void rebuildKeyDirectory();
 
+        void doMerge(const std::string& name);
         bool checkHandle(const BitCaskHandle &handle) { return handle.directory == directory; }
     };
 

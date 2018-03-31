@@ -150,6 +150,45 @@ namespace NS_bitcask {
     size_t BitCaskLogEntry<Key, Value>::CRC32ANDTIMESTAMPLENGTH =
             sizeof(BitCaskLogEntry::crc32) + sizeof(BitCaskLogEntry::tstamp);
 
+    template<class Key, class Value>
+    void BitCaskLogEntry<Key, Value>::writeToFile(int fd) {
+        size_t sz =
+                CRC32ANDTIMESTAMPLENGTH + sizeof(BitCaskLogEntry::ksz) + sizeof(BitCaskLogEntry::value_sz) + this->ksz +
+                this->value_sz;
+        std::vector<char> buff(sz);
+
+        auto kserial = SERIAL<Key>::serial(this->key);
+        auto vserial = SERIAL<Value>::serial(this->value);
+
+        //get serialize byte array
+        //crc32
+        *(reinterpret_cast<uint32_t *>(buff.data())) = this->crc32;
+        //time stamp
+        *(reinterpret_cast<time_t *>(&buff[0] + sizeof(uint32_t))) = this->tstamp;
+        //keyreadBytes size
+        *(reinterpret_cast<size_t *>(&buff[0] + CRC32ANDTIMESTAMPLENGTH)) = kserial.size();
+        //value size
+        *(reinterpret_cast<size_t *>(&buff[0] + CRC32ANDTIMESTAMPLENGTH +
+                                     sizeof(BitCaskLogEntry::ksz))) = vserial.size();
+        size_t offset = CRC32ANDTIMESTAMPLENGTH + sizeof(this->ksz) + sizeof(this->value_sz);
+        //key
+        for (size_t i = 0; i < kserial.size(); i++) {
+            buff[offset++] = kserial[i];
+        }
+        //value
+        for (size_t i = 0; i < vserial.size(); i++) {
+            buff[offset++] = vserial[i];
+        }
+        assert(offset == sz);
+
+
+        ssize_t writeRet = ::write(fd, buff.data(), buff.size());
+        if (writeRet != buff.size()) {
+            perror("write log entry");
+            exit((1));
+        }
+    }
+
     template
     class BitCaskLogEntry<int, std::string>;
 

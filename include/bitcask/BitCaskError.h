@@ -11,7 +11,8 @@ namespace NS_bitcask {
     enum {
         OK = 0,
         INVALID_HANDLE,
-        NO_SUCH_ELEMENT_IN_KEY_DIR
+        NO_SUCH_ELEMENT_IN_KEY_DIR,
+        CANNOT_OPEN_DIR,
     };
 
     struct BitCaskError {
