@@ -9,3 +9,7 @@ target_link_libraries(hint libbitcask)
 
 add_executable(roll rolling.cpp)
 target_link_libraries(roll libbitcask)
+
+
+add_executable(gp getandput.cpp)
+target_link_libraries(gp libbitcask)
