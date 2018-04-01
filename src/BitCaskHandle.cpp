@@ -8,12 +8,12 @@
 #include <BitCaskError.h>
 
 namespace std {
-    template<>
-    struct hash<NS_bitcask::BitCaskHandle> {
-        std::size_t operator()(const NS_bitcask::BitCaskHandle &handle) const {
-            return std::hash<int>()(handle.number) ^ std::hash<string>()(handle.file_name);
-        }
-    };
+//    template<>
+//    struct hash<NS_bitcask::BitCaskHandle> {
+//        std::size_t operator()(const NS_bitcask::BitCaskHandle &handle) const {
+//            return std::hash<int>()(handle.number) ^ std::hash<string>()(handle.file_name);
+//        }
+//    };
 
 
 }

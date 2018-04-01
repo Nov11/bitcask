@@ -55,19 +55,37 @@ namespace NS_bitcask {
         BitCaskError close(BitCaskHandle handle);
 
     private:
+        //fired up and ready for service
         bool opened = false;
+        //working directory' parent directory. recovery when bitcask destructed
         std::string originalDirectory;
+        //working directory
         std::string directory;
+        //use this lock file to make sure that there's only one thread take charge of this directory
         std::string lockFileName = "curLockFile";
+        //lock file's file descriptor
         int lockFileFD = -1;
+        //the file that the current writing goes to
         int fileFd = -1;
+        //the file name for fileFd
         std::string currentFileName;
+        //in memory index from a key to its newest copy's location
         BitCaskKeyDir<Key, Value> bitCaskKeyDir;
+        //if file length exceeded, create a new file. in bytes.
+        const size_t logFileLengthLimit = 1024;
 
         void rebuildKeyDirectory();
 
-        void doMerge(const std::string& name);
+        void doMerge(const std::string &name);
+
         bool checkHandle(const BitCaskHandle &handle) { return handle.directory == directory; }
+
+        void rollingFileIfNeeded();
+
+        static std::string newFileName() {
+            time_t currentTime = time(nullptr);
+            return std::to_string(currentTime);
+        }
     };
 
 }

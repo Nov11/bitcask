@@ -6,3 +6,6 @@ target_link_libraries(pg libbitcask)
 
 add_executable(hint hintfile.cpp)
 target_link_libraries(hint libbitcask)
+
+add_executable(roll rolling.cpp)
+target_link_libraries(roll libbitcask)

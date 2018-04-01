@@ -92,16 +92,17 @@ namespace NS_bitcask {
         rebuildKeyDirectory();
 
         //open a file to write kv pairs
-        time_t currentTime = time(nullptr);
-        BitCaskHandle result(0, std::to_string(currentTime), this->directory);
-
-        int fileFD = ::open(result.file_name.data(), O_CREAT | O_CLOEXEC | O_RDWR | O_SYNC, S_IRWXU);
+        auto outputFileName = newFileName();
+        int fileFD = ::open(outputFileName.data(), O_CREAT | O_CLOEXEC | O_RDWR | O_SYNC, S_IRWXU);
         if (fileFD == -1) {
             perror("open log file");
+            return BitCaskHandle::invalid();
         }
         this->fileFd = fileFD;
-        this->currentFileName = result.file_name;
+        this->currentFileName = outputFileName;
         this->opened = true;
+
+        BitCaskHandle result(0, outputFileName, this->directory);
         return result;
     }
 
@@ -152,23 +153,27 @@ namespace NS_bitcask {
 
     template<class Key, class Value>
     BitCaskError BitCask<Key, Value>::put(BitCaskHandle handle, const Key &key, const Value &value) {
+        (void) handle;
         BitCaskLogEntry<Key, Value> entry;
         entry.key = key;
         entry.value = value;
-        entry.writeToFileAndUpdateFields(fileFd, handle.file_name);
+        rollingFileIfNeeded();
+        entry.writeToFileAndUpdateFields(fileFd, currentFileName);
         bitCaskKeyDir.insert(entry);
         return BitCaskError::OK();
     }
 
     template<class Key, class Value>
     BitCaskError BitCask<Key, Value>::del(BitCaskHandle handle, const Key &key) {
+        (void) handle;
         //remove key from key entry directory and mark that in file
         //if a key is removed, its value sz will be empty
         //first mark it in file
         BitCaskLogEntry<Key, Value> entry;
         entry.key = key;
         entry.value_sz = 0;
-        entry.writeToFileAndUpdateFields(fileFd, handle.file_name);
+        rollingFileIfNeeded();
+        entry.writeToFileAndUpdateFields(fileFd, currentFileName);
         //second remove it from directory
         bitCaskKeyDir.del(key);
         return BitCaskError::OK();
@@ -218,6 +223,7 @@ namespace NS_bitcask {
 
     template<class Key, class Value>
     BitCaskError BitCask<Key, Value>::close(BitCaskHandle handle) {
+        this->opened = false;
         return BitCaskError::OK();
     }
 
@@ -346,6 +352,7 @@ namespace NS_bitcask {
             if (ret) {
                 if (keyDirEntry.value_pos == logEntry.value_offset) {
                     //log this log entry to hint file
+                    rollingFileIfNeeded();
                     logEntry.writeToFile(hintFD);
                     notEmpty = true;
                 }
@@ -364,6 +371,32 @@ namespace NS_bitcask {
             if (ret == -1) {
                 perror("rename hint tmp file to hint file failed");
             }
+        }
+    }
+
+    template<class Key, class Value>
+    void BitCask<Key, Value>::rollingFileIfNeeded() {
+        assert(opened == true);
+        //get the file length of fileFd
+        struct stat stat1;
+        if (::stat(currentFileName.data(), &stat1) != 0) {
+            perror("get length of current writing file");
+            return;
+        }
+
+        if (stat1.st_size > logFileLengthLimit) {
+            //close the current file
+            ::close(fileFd);
+            this->currentFileName = "";
+            //open a new one
+            auto name = newFileName();
+            int ret = ::open(name.data(), O_CREAT | O_CLOEXEC | O_RDWR | O_SYNC, S_IRWXU);
+            if (ret == -1) {
+                perror("create rolling log file");
+                return;
+            }
+            this->currentFileName = name;
+            this->fileFd = ret;
         }
     }
 
