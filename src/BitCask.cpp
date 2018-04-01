@@ -88,7 +88,8 @@ namespace NS_bitcask {
         }
         this->lockFileFD = lockFile;
 
-        //TODO:read the key directory for this directory and merge it into global tree
+        //read the key directory for this directory and merge it into global tree. no need for now as
+        //one bitcask takes care of one directory and shares nothing with other if there are multiple instance
 
         rebuildKeyDirectory();
 
