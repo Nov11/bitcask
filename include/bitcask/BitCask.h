@@ -72,7 +72,7 @@ namespace NS_bitcask {
         //in memory index from a key to its newest copy's location
         BitCaskKeyDir<Key, Value> bitCaskKeyDir;
         //if file length exceeded, create a new file. in bytes.
-        const size_t logFileLengthLimit = 1024;
+        const size_t logFileLengthLimit = 512;
 
         void rebuildKeyDirectory();
 

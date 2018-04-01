@@ -11,11 +11,11 @@ add_executable(hint hintfile.cpp)
 target_link_libraries(hint libbitcask)
 add_test(hintfiletest hint)
 
+add_executable(gp getandput.cpp)
+target_link_libraries(gp libbitcask)
+add_test(getnoexistkeytest gp)
 
 add_executable(roll rolling.cpp)
 target_link_libraries(roll libbitcask)
 add_test(rollingfiletest roll)
 
-add_executable(gp getandput.cpp)
-target_link_libraries(gp libbitcask)
-add_test(getnoexistkeytest gp)

@@ -39,7 +39,7 @@ int main() {
 
     map<int, string> values;
 
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < 50; i++) {
         values[i] = to_string(i);
     }
 
