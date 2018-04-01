@@ -72,7 +72,7 @@ namespace NS_bitcask {
             return BitCaskLogEntry::invalid();
         }
 
-        ret.tstamp = *reinterpret_cast<time_t *>(&preamble[sizeof(BitCaskLogEntry::crc32)]);
+        ret.tstamp = *reinterpret_cast<int64_t *>(&preamble[sizeof(BitCaskLogEntry::crc32)]);
         ret.ksz = ksz;
         ret.value_sz = vsz;
         ret.key = DESERIAL<Key>::deserial(&preamble[skip], ksz);
@@ -105,7 +105,7 @@ namespace NS_bitcask {
         //get serialize byte array
         //time stamp
         auto tstamp = time(nullptr);
-        *(reinterpret_cast<time_t *>(&buff[0] + sizeof(uint32_t))) = tstamp;
+        *(reinterpret_cast<int64_t *>(&buff[0] + sizeof(uint32_t))) = tstamp;
         //keyreadBytes size
         *(reinterpret_cast<size_t *>(&buff[0] + CRC32ANDTIMESTAMPLENGTH)) = kserial.size();
         //value size
@@ -164,7 +164,7 @@ namespace NS_bitcask {
         //crc32
         *(reinterpret_cast<uint32_t *>(buff.data())) = this->crc32;
         //time stamp
-        *(reinterpret_cast<time_t *>(&buff[0] + sizeof(uint32_t))) = this->tstamp;
+        *(reinterpret_cast<int64_t *>(&buff[0] + sizeof(uint32_t))) = this->tstamp;
         //keyreadBytes size
         *(reinterpret_cast<size_t *>(&buff[0] + CRC32ANDTIMESTAMPLENGTH)) = kserial.size();
         //value size

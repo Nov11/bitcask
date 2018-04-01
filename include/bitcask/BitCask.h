@@ -11,6 +11,7 @@
 #include <BitCaskHandle.h>
 #include <BitCaskError.h>
 #include <BitCaskKeyDir.h>
+#include <chrono>
 
 namespace NS_bitcask {
 
@@ -83,7 +84,8 @@ namespace NS_bitcask {
         void rollingFileIfNeeded();
 
         static std::string newFileName() {
-            time_t currentTime = time(nullptr);
+            auto ret = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch());
+            int64_t currentTime = ret.count();
             return std::to_string(currentTime);
         }
     };

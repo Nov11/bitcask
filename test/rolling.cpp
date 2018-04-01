@@ -12,6 +12,7 @@
 #include <assert.h>
 #include <dirent.h>
 #include <map>
+#include <random>
 
 using namespace std;
 using namespace NS_bitcask;
@@ -39,7 +40,7 @@ int main() {
 
     map<int, string> values;
 
-    for (int i = 0; i < 50; i++) {
+    for (int i = 0; i < 500; i++) {
         values[i] = to_string(i);
     }
 
@@ -64,8 +65,18 @@ int main() {
         }
 
         //this is for delete
-        bitCask.del(handle, 5);
-        values.erase(5);
+        std::default_random_engine generator(std::chrono::system_clock::now().time_since_epoch().count());
+        std::uniform_int_distribution<int> distribution(0, values.size());
+        int delCnt = distribution(generator);
+        int removed = 0;
+        for (int cnt = 0; cnt < delCnt; cnt++) {
+            int toDel = distribution(generator);
+            bitCask.del(handle, toDel);
+            if (values.erase(toDel)) {
+                removed++;
+            }
+        }
+        std::cout << "removed " << removed << " [" << delCnt << "] elements from values" << std::endl;
         //
         bitCask.merge("bctest");
         bitCask.close(handle);

@@ -18,7 +18,7 @@ namespace NS_bitcask {
         std::string file_id;
         size_t value_sz = 0;
         off_t value_pos = 0;
-        time_t tstamp = 0;
+        int64_t tstamp = 0;
 
         template<class Key, class Value>
         static KeyDirEntry convert(BitCaskLogEntry<Key, Value> &entry) {

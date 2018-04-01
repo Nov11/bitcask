@@ -15,7 +15,7 @@ namespace NS_bitcask {
     template<class Key, class Value>
     struct BitCaskLogEntry {
         uint32_t crc32 = 0;
-        time_t tstamp = 0;
+        int64_t tstamp = 0;
         size_t ksz = 0;
         size_t value_sz = 0;
         Key key;

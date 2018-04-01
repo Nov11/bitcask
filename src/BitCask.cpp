@@ -18,6 +18,7 @@
 #include <Utility.h>
 #include <assert.h>
 #include <set>
+#include <iostream>
 
 namespace NS_bitcask {
     struct DIR_WRAPPER {
@@ -354,7 +355,6 @@ namespace NS_bitcask {
             if (ret) {
                 if (keyDirEntry.value_pos == logEntry.value_offset) {
                     //log this log entry to hint file
-                    rollingFileIfNeeded();
                     logEntry.writeToFile(hintFD);
                     notEmpty = true;
                 }
@@ -388,6 +388,7 @@ namespace NS_bitcask {
 
         if (stat1.st_size > logFileLengthLimit) {
             //close the current file
+            std::cout << "closed rolling file: " << this->currentFileName << std::endl;
             ::close(fileFd);
             this->currentFileName = "";
             //open a new one
@@ -399,6 +400,7 @@ namespace NS_bitcask {
             }
             this->currentFileName = name;
             this->fileFd = ret;
+            std::cout << "opened rolling file: " << this->currentFileName << std::endl;
         }
     }
 
