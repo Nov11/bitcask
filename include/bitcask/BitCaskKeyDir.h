@@ -11,6 +11,7 @@
 #include <vector>
 #include <BitCaskHandle.h>
 #include <BitCaskLogEntry.h>
+#include <map>
 
 namespace NS_bitcask {
     struct KeyDirEntry {
@@ -32,7 +33,7 @@ namespace NS_bitcask {
 
     template<class Key, class Value>
     class BitCaskKeyDir {
-        std::unordered_map<Key, KeyDirEntry> table;
+        std::map<Key, KeyDirEntry> table;
     public:
 
         void rebuild(int openedFD, std::string fileName) {

@@ -19,6 +19,8 @@ using namespace NS_bitcask;
 int main() {
     vector<char> buff(100);
     getcwd(&buff[0], 100);
+    std::cout << "cwd : " << &buff[0] << std::endl;
+    std::cout << "clean before test start" << std::endl;
     DIR *dir = opendir("bctest");
     if (dir) {
         chdir("bctest");
@@ -33,10 +35,11 @@ int main() {
         chdir("..");
     }
     closedir(dir);
+    std::cout << "clean before test start [return]" << std::endl;
 
     map<int, string> values;
 
-    for (int i = 0; i < 300; i++) {
+    for (int i = 0; i < 100; i++) {
         values[i] = to_string(i);
     }
 
@@ -55,7 +58,9 @@ int main() {
         for (auto item : values) {
             string tmp;
             assert(bitCask.get(handle, item.first, tmp) == BitCaskError::OK());
-            assert(item.second == tmp);
+            if (item.second != tmp) {
+                assert(false);
+            }
         }
 
         //this is for delete
@@ -90,6 +95,23 @@ int main() {
         }
     }
 
-
+    {
+        std::cout << "clean before test return" << std::endl;
+        DIR *dir = opendir("bctest");
+        if (dir) {
+            chdir("bctest");
+            dirent *entry = readdir(dir);
+            while (entry) {
+                cout << "remove file: " << entry->d_name << endl;
+                if (unlink(entry->d_name)) {
+//                perror("unlink");
+                }
+                entry = readdir(dir);
+            }
+            chdir("..");
+        }
+        closedir(dir);
+        std::cout << "clean before test return [done]" << std::endl;
+    }
     return 0;
 }

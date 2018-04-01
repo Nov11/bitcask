@@ -102,7 +102,9 @@ namespace NS_bitcask {
         this->currentFileName = outputFileName;
         this->opened = true;
 
-        BitCaskHandle result(0, outputFileName, this->directory);
+        BitCaskHandle result(0
+//                , outputFileName
+                , this->directory);
         return result;
     }
 
