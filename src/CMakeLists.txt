@@ -12,4 +12,4 @@ set(SOURCE
         ../include/bitcask/CRC32.h
         ../include/bitcask/Utility.h
         )
-add_library(libbitcask ${SOURCE})
+add_library(bitcask ${SOURCE})

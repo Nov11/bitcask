@@ -13,4 +13,5 @@ feature:
 
 later:
 
-[ ] make it a service  
+[ ] make it a service
+[ ] async flush block of contents to disk
