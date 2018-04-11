@@ -13,5 +13,7 @@ feature:
 
 later:
 
-[ ] make it a service
+[ ] make it a service (shouldn't this be an embeded service?)
 [ ] async flush block of contents to disk
+
+
