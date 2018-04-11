@@ -1,5 +1,5 @@
+syntax = "proto3";
 message Result{
-    require int32 error_code
-    require string error_message
-
+    int32 error_code = 1;
+    string error_message = 2;
 }
