@@ -2,6 +2,6 @@ sudo: required
 language: cpp
 
 before_script:
-  - ./install_grpc.sh
+  - sh install_grpc.sh
 
 script: sh build.sh
