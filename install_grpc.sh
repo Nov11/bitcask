@@ -4,3 +4,4 @@ cd grpc
 git submodule update --init
 make
 sudo make install
+which protoc
