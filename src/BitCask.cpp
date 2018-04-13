@@ -3,7 +3,6 @@
 //
 #include <sys/types.h>
 #include <dirent.h>
-#include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/file.h>
@@ -13,18 +12,17 @@
 #include <string>
 
 #include <BitCask.h>
-#include <BitCaskHandle.h>
 #include <cstring>
-#include <Utility.h>
-#include <assert.h>
+#include <cassert>
 #include <set>
 #include <iostream>
+#include <Utility.h>
 
 namespace NS_bitcask {
     struct DIR_WRAPPER {
         DIR *ptr = nullptr;
 
-        DIR_WRAPPER(DIR *ptr) : ptr(ptr) {}
+        explicit DIR_WRAPPER(DIR *ptr) : ptr(ptr) {}
 
         ~DIR_WRAPPER() {
             if (ptr) {
@@ -40,7 +38,7 @@ namespace NS_bitcask {
     struct FD_WRAPPER {
         int fd = -1;
 
-        FD_WRAPPER(int fd) : fd(fd) {
+        explicit FD_WRAPPER(int fd) : fd(fd) {
 
         }
 
@@ -95,7 +93,7 @@ namespace NS_bitcask {
 
         //open a file to write kv pairs
         auto outputFileName = newFileName();
-        int fileFD = ::open(outputFileName.data(), O_CREAT | O_CLOEXEC | O_RDWR | O_SYNC, S_IRWXU);
+        int fileFD = ::open(outputFileName.data(), O_CREAT | O_CLOEXEC | O_WRONLY, S_IRWXU);
         if (fileFD == -1) {
             perror("open log file");
             return BitCaskHandle::invalid();
@@ -116,7 +114,7 @@ namespace NS_bitcask {
     }
 
     static std::vector<char> readBytes(const std::string &fileName, off_t off, size_t sz) {
-        FD_WRAPPER fd = ::open(fileName.data(), O_RDONLY);
+        FD_WRAPPER fd(::open(fileName.data(), O_RDONLY));
         if (fd == -1) {
             perror("read value open file");
             return {};
@@ -195,7 +193,7 @@ namespace NS_bitcask {
     BitCaskError BitCask<Key, Value>::merge(const std::string &directoryName) {
         assert(directoryName == this->directory);
         //transverse files in this folder
-        DIR_WRAPPER dir = opendir(".");
+        DIR_WRAPPER dir(opendir("."));
         if (dir == nullptr) {
             perror("open dir for merge");
             return BitCaskError(CANNOT_OPEN_DIR, "cannot open current dir");
@@ -221,12 +219,18 @@ namespace NS_bitcask {
 
     template<class Key, class Value>
     BitCaskError BitCask<Key, Value>::sync(BitCaskHandle handle) {
-        //as using O_SYNC flag on opened files, this is not needed
+        (void) handle;
+        assert(opened);
+        if (fsync(fileFd)) {
+            perror("flush out buffers");
+            return BitCaskError(ERROR_FLUSH_BUFFER, strerror(errno));
+        }
         return BitCaskError::OK();
     }
 
     template<class Key, class Value>
     BitCaskError BitCask<Key, Value>::close(BitCaskHandle handle) {
+        sync(handle);
         this->opened = false;
         return BitCaskError::OK();
     }
@@ -234,8 +238,8 @@ namespace NS_bitcask {
     template<class Key, class Value>
     void BitCask<Key, Value>::rebuildKeyDirectory() {
         //iterate all files in this directory
-        DIR_WRAPPER dir = opendir(".");
-        if (dir == NULL) {
+        DIR_WRAPPER dir(opendir("."));
+        if (dir == nullptr) {
             perror("fdopendir");
             exit(1);
         }
@@ -270,7 +274,7 @@ namespace NS_bitcask {
         //read files from the oldest to newest
 
         for (const auto &name : fileNameLists) {
-            FD_WRAPPER fileFd = ::open(name.data(), O_RDONLY);
+            FD_WRAPPER fileFd(::open(name.data(), O_RDONLY));
             if (fileFd == -1) {
                 fprintf(stderr, "open file: %s failed : %s\n", name.data(), strerror(errno));
                 //should not proceed any more
@@ -307,7 +311,8 @@ namespace NS_bitcask {
 
     template<class Key, class Value>
     BitCaskError BitCask<Key, Value>::list_keys(BitCaskHandle handle, std::vector<Key> *result) {
-        assert(this->opened == true);
+        (void) handle;
+        assert(this->opened);
         auto ret = bitCaskKeyDir.keyList();
         std::copy(ret.begin(), ret.end(), back_inserter(*result));
         return BitCaskError::OK();
@@ -336,13 +341,13 @@ namespace NS_bitcask {
      */
     template<class Key, class Value>
     void BitCask<Key, Value>::doMerge(const std::string &name) {
-        FD_WRAPPER hintFD = ::open((name + "hint.tmp").data(), O_WRONLY | O_CREAT, S_IRWXU);
+        FD_WRAPPER hintFD(::open((name + "hint.tmp").data(), O_WRONLY | O_CREAT, S_IRWXU));
         if (hintFD == -1) {
             perror("open hint tmp file failed");
             return;
         }
 
-        FD_WRAPPER fileFD = ::open(name.data(), O_RDONLY);
+        FD_WRAPPER fileFD(::open(name.data(), O_RDONLY));
         if (fileFD == -1) {
             perror("open original file failed");
         }
@@ -379,22 +384,24 @@ namespace NS_bitcask {
 
     template<class Key, class Value>
     void BitCask<Key, Value>::rollingFileIfNeeded() {
-        assert(opened == true);
+        assert(opened);
         //get the file length of fileFd
-        struct stat stat1;
+        struct stat stat1{};
         if (::stat(currentFileName.data(), &stat1) != 0) {
             perror("get length of current writing file");
             return;
         }
 
         if (stat1.st_size > logFileLengthLimit) {
-            //close the current file
-            std::cout << "closed rolling file: " << this->currentFileName << std::endl;
-            ::close(fileFd);
-            this->currentFileName = "";
             //open a new one
             auto name = newFileName();
-            int ret = ::open(name.data(), O_CREAT | O_CLOEXEC | O_RDWR | O_SYNC, S_IRWXU);
+            //close the current file
+            std::cout << "closed rolling file: " << this->currentFileName << std::endl;
+            assert(name != this->currentFileName);
+            ::close(fileFd);
+            this->currentFileName = "";
+
+            int ret = ::open(name.data(), O_CREAT | O_CLOEXEC | O_WRONLY, S_IRWXU);
             if (ret == -1) {
                 perror("create rolling log file");
                 return;

@@ -6,13 +6,15 @@
 #define SRC_BITCASK_BITCASKERROR_H
 
 #include <string>
+#include <utility>
 
 namespace NS_bitcask {
     enum {
-        OK = 0,
+        SUCCESS = 0,
         INVALID_HANDLE,
         NO_SUCH_ELEMENT_IN_KEY_DIR,
         CANNOT_OPEN_DIR,
+        ERROR_FLUSH_BUFFER
     };
 
     struct BitCaskError {
@@ -20,11 +22,11 @@ namespace NS_bitcask {
         std::string errorMessage;
 
         static BitCaskError &OK() {
-            static BitCaskError OK(0, "OK");
+            static BitCaskError OK(SUCCESS, "OK");
             return OK;
         }
 
-        BitCaskError(int errorCode, const std::string &msg) : errorCode(errorCode), errorMessage(msg) {}
+        BitCaskError(int errorCode, std::string msg) : errorCode(errorCode), errorMessage(std::move(msg)) {}
 
         bool operator==(const BitCaskError &other) const {
             if (this == &other) {
