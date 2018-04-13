@@ -4,6 +4,5 @@ cd grpc
 git submodule update --init
 make
 sudo make install
-sudo apt-get -qq update
 sudo apt get install -y protobuf-compiler
 
