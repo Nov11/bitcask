@@ -1,4 +1,5 @@
-[![Build Status](https://travis-ci.org/Nov11/bc.svg?branch=master)](https://travis-ci.org/Nov11/bc)
+[![Build Status](https://travis-ci.org/Nov11/bitcask.svg?branch=master)](https://travis-ci.org/Nov11/bitcask)
+
 
 bitcask
 
